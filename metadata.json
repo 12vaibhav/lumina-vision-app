@@ -1,5 +1,5 @@
 {
-  "name": "LuminaVision AI - Real Estate Interior Previewer",
+  "name": "Lumina Vision AI - Interior Previewer",
   "description": "Transform empty rooms into high-end designed spaces using advanced AI. Features multi-style presets, room type selection, day/night lighting modes, and an interactive before/after comparison tool.",
   "requestFramePermissions": [
     "camera"

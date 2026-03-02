@@ -1,0 +1,240 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --bg: #020617;
+  --surface: rgba(15, 23, 42, 0.4);
+  --text: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border: rgba(255, 255, 255, 0.08);
+  --radius: 1rem;
+  --radius-lg: 2rem;
+
+  /* Contelas-inspired tokens */
+  --base--black: #000;
+  --base--white: #fff;
+  --base--yellow: #e6ff02;
+  --base--beige-100: #f5f6f1;
+  --base--blue: #2453ff;
+  --premium--easing: cubic-bezier(.25, .46, .45, .94);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.aurora-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+  overflow: hidden;
+}
+
+.aurora-container {
+  position: absolute;
+  top: -25%;
+  left: -25%;
+  width: 150%;
+  height: 150%;
+  animation: aurora-rotate 40s linear infinite;
+  filter: blur(80px);
+  opacity: 0.4;
+  will-change: transform;
+}
+
+.aurora-item {
+  position: absolute;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+}
+
+.aurora-1 {
+  top: 10%;
+  left: 10%;
+  background: #4f46e5;
+  animation: aurora-pulse 10s ease-in-out infinite;
+}
+
+.aurora-2 {
+  top: 20%;
+  right: 10%;
+  background: #9333ea;
+  animation: aurora-pulse 12s ease-in-out infinite reverse;
+}
+
+.aurora-3 {
+  bottom: 10%;
+  left: 20%;
+  background: #ec4899;
+  animation: aurora-pulse 15s ease-in-out infinite 2s;
+}
+
+.aurora-4 {
+  bottom: 20%;
+  right: 20%;
+  background: #06b6d4;
+  animation: aurora-pulse 8s ease-in-out infinite 1s;
+}
+
+@keyframes aurora-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aurora-pulse {
+
+  0%,
+  100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.2) translate(10%, 10%);
+    opacity: 0.3;
+  }
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-container {
+    animation: none;
+  }
+
+  .aurora-item {
+    animation: none;
+  }
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.4s var(--premium--easing);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-5px) scale(1.02);
+  background: rgba(15, 23, 42, 0.6);
+  box-shadow: 0 20px 40px -20px rgba(99, 102, 241, 0.2);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #fff 30%, #a5b4fc 70%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Infinite Scrolling Marquee */
+.marquee-wrapper {
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+  gap: 3rem;
+  padding: 2rem 0;
+}
+
+.marquee-content {
+  display: flex;
+  flex: none;
+  gap: 3rem;
+  animation: scroll-left 40s linear infinite;
+  align-items: center;
+}
+
+.marquee-content.reverse {
+  animation-direction: reverse;
+}
+
+@keyframes scroll-left {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-100% - 3rem));
+  }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Base Utilities */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+  transition: all 0.3s var(--premium--easing);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px) scale(0.98);
+  box-shadow: 0 10px 20px -10px var(--primary);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+}

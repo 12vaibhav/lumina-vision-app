@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { 
-  Plus, 
-  Sparkles, 
+import {
+  Plus,
+  Sparkles,
   Cpu,
   Palette,
   Sun,
@@ -82,7 +82,7 @@ export const TESTIMONIALS = [
   {
     name: 'Sarah Jenkins',
     role: 'Luxury Real Estate Agent',
-    content: 'LuminaVision has completely changed how I show vacant properties. The photorealism is unmatched and my clients are consistently blown away.',
+    content: 'Lumina Vision has completely changed how I show vacant properties. The photorealism is unmatched and my clients are consistently blown away.',
     avatar: 'https://picsum.photos/seed/sarah/100/100'
   },
   {
@@ -153,7 +153,7 @@ export const BLOG_POSTS = [
 export const FAQS = [
   {
     question: 'How accurate is the AI in maintaining room dimensions?',
-    answer: 'The LuminaVision engine uses depth-aware neural networks to ensure that furniture and structures respect the actual physical dimensions of your space.'
+    answer: 'The Lumina Vision engine uses depth-aware neural networks to ensure that furniture and structures respect the actual physical dimensions of your space.'
   },
   {
     question: 'What image formats are supported?',

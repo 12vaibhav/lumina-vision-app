@@ -1,5 +1,5 @@
 {
-  "name": "luminavision-ai---real-estate-interior-previewer",
+  "name": "lumina-vision-ai-interior-previewer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,15 +10,19 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.41.0",
+    "@google/genai": "^1.42.0",
+    "@huggingface/inference": "^4.13.12",
+    "@supabase/supabase-js": "^2.97.0",
     "lucide-react": "^0.574.0",
     "motion": "^12.34.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "tailwindcss": "^4.2.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

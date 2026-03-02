@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Plus, 
-  ChevronRight, 
-  ArrowRight, 
-  Sparkles, 
-  Upload, 
-  Download, 
-  Sun, 
+import {
+  Plus,
+  ChevronRight,
+  ArrowRight,
+  Sparkles,
+  Upload,
+  Download,
+  Sun,
   Moon,
   Info,
   Menu,
@@ -40,6 +40,7 @@ import { FEATURES, TESTIMONIALS, FAQS, HOW_IT_WORKS, PRICING_PLANS, BLOG_POSTS }
 import { BeforeAfterSlider } from './components/BeforeAfterSlider';
 import { GenerationProgress } from './components/GenerationProgress';
 import { generateInteriorPreview } from './services/geminiService';
+import { supabase } from './services/supabaseClient';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -54,7 +55,7 @@ export default function App() {
     lighting: LightingMode.Day,
     image: null
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [loadingVariations, setLoadingVariations] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
@@ -62,6 +63,9 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const toolRef = useRef<HTMLDivElement>(null);
 
@@ -79,22 +83,70 @@ export default function App() {
     return () => observer.disconnect();
   }, [loading, resultImage, showHistory]);
 
-  // Load history from localStorage on mount
+  // Auth state listener
   useEffect(() => {
-    const savedHistory = localStorage.getItem('lumina_history');
-    if (savedHistory) {
-      try {
-        setHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error("Failed to load history", e);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`
+        });
       }
-    }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.id}`
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Save history to localStorage when it changes
+  // Load history from Supabase on user changes
   useEffect(() => {
-    localStorage.setItem('lumina_history', JSON.stringify(history));
-  }, [history]);
+    const fetchHistory = async () => {
+      if (!user) {
+        setHistory([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        const mappedHistory: HistoryItem[] = data.map(item => ({
+          id: item.id,
+          originalImage: item.original_image_url,
+          resultImage: item.result_image_url,
+          config: {
+            style: item.style as InteriorStyle,
+            roomType: item.room_type as RoomType,
+            lighting: item.lighting as LightingMode,
+            image: item.original_image_url
+          },
+          timestamp: new Date(item.created_at).getTime()
+        }));
+        setHistory(mappedHistory);
+      }
+    };
+
+    fetchHistory();
+  }, [user]);
+
+  // Removed localStorage sync effect as we save on generation now
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -116,26 +168,61 @@ export default function App() {
     }
     setLoading(true);
     setError(null);
+    setStatusMessage("Preparing your design...");
     try {
-      const result = await generateInteriorPreview(config);
+      const result = await generateInteriorPreview(config, undefined, 0, (msg) => {
+        setStatusMessage(msg);
+      });
+      setStatusMessage(null);
       setResultImage(result.imageUrl);
-      
-      // Add to history
-      const newHistoryItem: HistoryItem = {
-        id: Math.random().toString(36).substr(2, 9),
-        originalImage: config.image!,
-        resultImage: result.imageUrl,
-        config: { ...config },
-        timestamp: Date.now()
-      };
-      setHistory(prev => [newHistoryItem, ...prev]);
+
+      // Save to Supabase (if logged in)
+      if (user) {
+        const { data: insertedData, error: insertError } = await supabase
+          .from('generations')
+          .insert([
+            {
+              user_id: user.id,
+              original_image_url: config.image!,
+              result_image_url: result.imageUrl,
+              style: config.style,
+              room_type: config.roomType,
+              lighting: config.lighting,
+              prompt: "Generated via Gemini 2.5 Flash Image"
+            }
+          ])
+          .select()
+          .single();
+
+        if (!insertError && insertedData) {
+          const newHistoryItem: HistoryItem = {
+            id: insertedData.id,
+            originalImage: insertedData.original_image_url,
+            resultImage: insertedData.result_image_url,
+            config: {
+              style: insertedData.style as InteriorStyle,
+              roomType: insertedData.room_type as RoomType,
+              lighting: insertedData.lighting as LightingMode,
+              image: insertedData.original_image_url
+            },
+            timestamp: new Date(insertedData.created_at).getTime()
+          };
+          setHistory(prev => [newHistoryItem, ...prev]);
+        } else if (insertError) {
+          console.error("Supabase insert error:", insertError);
+        }
+      }
+
       setVariations([]); // Clear variations when single generation is done
 
       setTimeout(() => {
         window.scrollTo({ top: toolRef.current?.offsetTop || 0, behavior: 'smooth' });
       }, 500);
-    } catch (err) {
-      setError("Generation failed. Please try again later.");
+    } catch (err: any) {
+      console.error("Generation Error:", err);
+      const errorMsg = err?.message || "Unknown error";
+      setError(errorMsg);
+      setStatusMessage(null);
     } finally {
       setLoading(false);
     }
@@ -146,24 +233,28 @@ export default function App() {
       setError("Please upload an image first.");
       return;
     }
-    
+
     setLoadingVariations(true);
     setError(null);
+    setStatusMessage("Generating variation 1 of 3...");
     setVariations([]); // Clear previous variations
     setResultImage(null); // Clear single result
-    
+
     const results: any[] = [];
-    
+
     try {
       // Sequential calls with incremental state updates
       for (let i = 0; i < 3; i++) {
         try {
-          const result = await generateInteriorPreview(config, i);
+          setStatusMessage(`Generating variation ${i + 1} of 3...`);
+          const result = await generateInteriorPreview(config, i, 0, (msg) => {
+            setStatusMessage(`Variation ${i + 1}/3: ${msg}`);
+          });
           results.push(result);
-          
+
           // Update variations state as they come in
           setVariations(prev => [...prev, result.imageUrl]);
-          
+
           // Add to history individually
           const newHistoryItem: HistoryItem = {
             id: Math.random().toString(36).substr(2, 9),
@@ -173,48 +264,77 @@ export default function App() {
             timestamp: Date.now()
           };
           setHistory(prev => [newHistoryItem, ...prev]);
-          
+
           // Increased delay between requests to avoid rate limiting
-          if (i < 2) await new Promise(resolve => setTimeout(resolve, 3000));
+          if (i < 2) {
+            setStatusMessage(`Variation ${i + 1} complete! Waiting before next request...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
         } catch (singleErr: any) {
-          console.error(`Variation ${i+1} failed:`, singleErr);
-          // Check if it's a rate limit error even after retries
-          const isRateLimit = singleErr?.message?.includes('429') || singleErr?.status === 429;
+          console.error(`Variation ${i + 1} failed:`, singleErr);
+          const isRateLimit = singleErr?.message?.includes('rate limit') || singleErr?.message?.includes('quota');
           if (isRateLimit) {
-            setError("The AI is currently experiencing high demand. We've generated partial results for you.");
+            setError("AI rate limit reached. We've generated partial results for you.");
           }
           // Continue to next variation if one fails
         }
       }
-      
+
+      setStatusMessage(null);
+
       if (results.length === 0) {
-        throw new Error("All variations failed to generate.");
+        throw new Error("All variations failed. Please wait a minute and try again.");
       }
 
       setTimeout(() => {
         window.scrollTo({ top: toolRef.current?.offsetTop || 0, behavior: 'smooth' });
       }, 500);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Variations Error:", err);
-      setError("Variations generation failed. This can happen due to high traffic or safety filters. Please try again in a moment.");
+      setError(err?.message || "Variations generation failed. Please try again in a moment.");
+      setStatusMessage(null);
     } finally {
       setLoadingVariations(false);
     }
   };
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock authentication
-    setUser({
-      id: '1',
-      email: 'demo@luminavision.ai',
-      name: 'Demo User',
-      avatar: 'https://picsum.photos/seed/user/100/100'
-    });
-    setIsAuthModalOpen(false);
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (authMode === 'login') {
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (authError) throw authError;
+      } else {
+        const { error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name: email.split('@')[0],
+            }
+          }
+        });
+        if (authError) throw authError;
+        alert('Verification email sent! Please check your inbox.');
+      }
+      setIsAuthModalOpen(false);
+      setEmail('');
+      setPassword('');
+    } catch (err: any) {
+      setError(err.message || "Authentication failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
@@ -242,18 +362,18 @@ export default function App() {
       <nav className="fixed top-0 left-0 right-0 z-50 glass backdrop-blur-2xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/30 group-hover:scale-110 transition-transform duration-500">
-              <Sparkles className="text-white w-6 h-6" />
+            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+              <img src="/favicon.png" alt="Lumina Vision Logo" className="w-10 h-10 object-contain brightness-110" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white font-['Outfit']">Lumina<span className="text-indigo-400">Vision</span></span>
+            <span className="text-2xl font-bold tracking-tight text-white font-['Outfit']">Lumina <span className="text-indigo-400">Vision</span></span>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-8">
             {['Home', 'Features', 'How it works', 'Reviews'].map((item) => (
               <a key={item} href={`#${item.toLowerCase().replace(/\s/g, '-')}`} className="text-sm font-medium text-gray-400 hover:text-white transition-all hover:scale-105">{item}</a>
             ))}
             {user && (
-              <button 
+              <button
                 onClick={() => setShowHistory(!showHistory)}
                 className={`text-sm font-medium transition-all hover:scale-105 flex items-center gap-2 ${showHistory ? 'text-indigo-400' : 'text-gray-400 hover:text-white'}`}
               >
@@ -274,7 +394,7 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={() => {
                   setAuthMode('login');
                   setIsAuthModalOpen(true);
@@ -312,17 +432,17 @@ export default function App() {
             </span>
             The Future of Real Estate Design
           </div>
-          
+
           <h1 className="text-6xl md:text-9xl font-bold tracking-tight text-white leading-[1] font-['Outfit']">
             Design <span className="text-gradient italic">Without</span> <br className="hidden md:block" /> Boundaries
           </h1>
-          
+
           <p className="max-w-3xl mx-auto text-xl md:text-2xl text-gray-400 leading-relaxed font-light">
             Instantly stage empty properties with AI. Transform old rooms into modern masterpieces with 4K photorealistic rendering.
           </p>
-          
+
           <div className="flex flex-wrap items-center justify-center gap-6 pt-6">
-            <button 
+            <button
               onClick={scrollToTool}
               className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] text-xl font-bold transition-all shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center gap-3 group"
             >
@@ -360,9 +480,37 @@ export default function App() {
         </div>
       </section>
 
+      {/* Partners Marquee */}
+      <section className="py-20 border-y border-white/5 bg-slate-950/50 overflow-hidden">
+        <div className="marquee-wrapper">
+          <div className="marquee-content">
+            {['Architectural Digest', 'Vogue Living', 'Dwell', 'Dezeen', 'Elle Decor', 'Design Milk', 'Wallpaper*', 'Hypebeast Home'].map((partner, i) => (
+              <div key={i} className="flex items-center gap-4 px-8">
+                <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all" />
+                <span className="text-2xl font-bold text-white/30 hover:text-indigo-400 transition-colors cursor-default font-['Outfit'] uppercase tracking-widest whitespace-nowrap">
+                  {partner}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* Duplicate for seamless loop */}
+          <div className="marquee-content" aria-hidden="true">
+            {['Architectural Digest', 'Vogue Living', 'Dwell', 'Dezeen', 'Elle Decor', 'Design Milk', 'Wallpaper*', 'Hypebeast Home'].map((partner, i) => (
+              <div key={i} className="flex items-center gap-4 px-8">
+                <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all" />
+                <span className="text-2xl font-bold text-white/30 hover:text-indigo-400 transition-colors cursor-default font-['Outfit'] uppercase tracking-widest whitespace-nowrap">
+                  {partner}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* History Section */}
       {/* History Section - Inspiration from "How it works" or "Blog" */}
       {showHistory && user && (
-        <section id="history" className="py-32 px-6 bg-indigo-600/5 reveal active">
+        <section id="history" className="py-32 px-6 bg-indigo-600/5 reveal">
           <div className="max-w-7xl mx-auto space-y-16">
             <div className="flex items-center justify-between">
               <div className="space-y-4">
@@ -371,7 +519,7 @@ export default function App() {
                 </div>
                 <h2 className="text-5xl font-bold text-white font-['Outfit']">Design History</h2>
               </div>
-              <button 
+              <button
                 onClick={() => setShowHistory(false)}
                 className="p-4 rounded-full glass border-white/10 text-gray-400 hover:text-white transition-all"
               >
@@ -396,7 +544,7 @@ export default function App() {
                     <div className="relative aspect-video overflow-hidden">
                       <img src={item.resultImage} alt="Result" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <button 
+                        <button
                           onClick={() => {
                             setConfig(item.config);
                             setResultImage(item.resultImage);
@@ -406,7 +554,7 @@ export default function App() {
                         >
                           <Play className="w-5 h-5 fill-current" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => deleteHistoryItem(item.id)}
                           className="p-3 bg-red-500 text-white rounded-full hover:scale-110 transition-transform"
                         >
@@ -438,7 +586,7 @@ export default function App() {
       <section id="showcase" ref={toolRef} className="py-24 px-6 relative reveal">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-12 items-start">
-            
+
             {/* Control Panel - Redesigned to match Main Tool Section in image */}
             <div className="lg:col-span-5 space-y-8 sticky top-28">
               <div className="glass-card rounded-[3rem] p-10 space-y-10 border border-white/10 shadow-2xl">
@@ -456,7 +604,7 @@ export default function App() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Room Type</label>
                     <div className="relative group">
-                      <select 
+                      <select
                         className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
                         value={config.roomType}
                         onChange={(e) => setConfig(prev => ({ ...prev, roomType: e.target.value as RoomType }))}
@@ -469,7 +617,7 @@ export default function App() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Interior Style</label>
                     <div className="relative group">
-                      <select 
+                      <select
                         className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
                         value={config.style}
                         onChange={(e) => setConfig(prev => ({ ...prev, style: e.target.value as InteriorStyle }))}
@@ -485,7 +633,7 @@ export default function App() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Design Prompt (Optional)</label>
                   <div className="relative">
-                    <textarea 
+                    <textarea
                       placeholder="Describe specific details like 'velvet textures', 'oak flooring', or 'minimalist art'..."
                       className="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-6 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-light min-h-[120px] resize-none placeholder:text-gray-600"
                     />
@@ -506,12 +654,12 @@ export default function App() {
                         <div className="relative w-full h-full group">
                           <img src={config.image} alt="Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           {(loading || loadingVariations) && (
-                            <motion.div 
+                            <motion.div
                               className="absolute inset-0 bg-indigo-500/20 z-10"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                             >
-                              <motion.div 
+                              <motion.div
                                 className="absolute top-0 left-0 right-0 h-1 bg-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.8)]"
                                 animate={{ top: ["0%", "100%", "0%"] }}
                                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
@@ -540,13 +688,13 @@ export default function App() {
                 {/* Lighting Selection */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <button 
+                    <button
                       onClick={() => setConfig(prev => ({ ...prev, lighting: LightingMode.Day }))}
                       className={`flex items-center justify-center gap-3 py-4 rounded-2xl border transition-all duration-300 ${config.lighting === LightingMode.Day ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
                     >
                       <Sun className="w-5 h-5" /> Daylight
                     </button>
-                    <button 
+                    <button
                       onClick={() => setConfig(prev => ({ ...prev, lighting: LightingMode.Night }))}
                       className={`flex items-center justify-center gap-3 py-4 rounded-2xl border transition-all duration-300 ${config.lighting === LightingMode.Night ? 'bg-purple-600 border-purple-500 text-white shadow-[0_10px_20px_rgba(147,51,234,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
                     >
@@ -556,14 +704,24 @@ export default function App() {
                 </div>
 
                 {error && (
-                  <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium flex items-center gap-3">
+                  <div className={`p-4 rounded-2xl text-sm font-medium flex items-center gap-3 ${error.includes('rate limit') || error.includes('quota') || error.includes('wait')
+                    ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                    : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                    }`}>
                     <Info className="w-5 h-5 flex-shrink-0" />
                     {error}
                   </div>
                 )}
 
+                {statusMessage && (loading || loadingVariations) && (
+                  <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium flex items-center gap-3 animate-pulse">
+                    <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin" />
+                    {statusMessage}
+                  </div>
+                )}
+
                 <div className="flex gap-4">
-                  <button 
+                  <button
                     onClick={handleGenerate}
                     disabled={loading || loadingVariations || !config.image}
                     className={`flex-1 py-6 rounded-2xl text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95'}`}
@@ -572,7 +730,7 @@ export default function App() {
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
                         Rendering...
-                        <motion.div 
+                        <motion.div
                           className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent"
                           animate={{ x: ['-100%', '100%'] }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
@@ -586,7 +744,7 @@ export default function App() {
                     )}
                   </button>
 
-                  <button 
+                  <button
                     onClick={handleGenerateVariations}
                     disabled={loading || loadingVariations || !config.image}
                     className={`flex-1 py-6 rounded-2xl text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-95'}`}
@@ -595,7 +753,7 @@ export default function App() {
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-6 h-6 text-white animate-spin" />
                         3 Visions...
-                        <motion.div 
+                        <motion.div
                           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
                           animate={{ x: ['-100%', '100%'] }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
@@ -620,8 +778,8 @@ export default function App() {
 
                 {loading || loadingVariations ? (
                   <div className="w-full space-y-12">
-                    <GenerationProgress 
-                      isLoading={loading || loadingVariations} 
+                    <GenerationProgress
+                      isLoading={loading || loadingVariations}
                       isVariations={loadingVariations}
                       style={config.style}
                     />
@@ -638,7 +796,7 @@ export default function App() {
                     )}
                   </div>
                 ) : (resultImage || variations.length > 0) && config.image ? (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
@@ -652,7 +810,7 @@ export default function App() {
                         </span>
                       </div>
                       {resultImage && (
-                        <button 
+                        <button
                           onClick={() => {
                             const link = document.createElement('a');
                             link.href = resultImage;
@@ -665,7 +823,7 @@ export default function App() {
                         </button>
                       )}
                     </div>
-                    
+
                     {resultImage ? (
                       <BeforeAfterSlider before={config.image} after={resultImage} />
                     ) : (
@@ -673,12 +831,12 @@ export default function App() {
                         {variations.map((v, i) => (
                           <div key={i} className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Option 0{i+1}</span>
-                              <button 
+                              <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Option 0{i + 1}</span>
+                              <button
                                 onClick={() => {
                                   const link = document.createElement('a');
                                   link.href = v;
-                                  link.download = `lumina-variation-${i+1}.png`;
+                                  link.download = `lumina-variation-${i + 1}.png`;
                                   link.click();
                                 }}
                                 className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors"
@@ -691,7 +849,7 @@ export default function App() {
                         ))}
                       </div>
                     )}
-                    
+
                     <div className="grid md:grid-cols-3 gap-6">
                       {[
                         { label: 'Theme', value: config.style },
@@ -700,7 +858,7 @@ export default function App() {
                       ].map((stat, i) => (
                         <div key={i} className="glass-card p-8 rounded-[2rem] border border-white/5 group">
                           <span className="text-[10px] uppercase tracking-[0.3em] text-indigo-400 font-black mb-1 block">Property {stat.label}</span>
-                          <p className="text-white text-xl font-bold font-['Outfit'] group-hover:text-indigo-300 transition-colors">{stat.value}</p>
+                          <p className="text-white text-xl font-bold font-['Outfit'] group-hover:text-indigo-300 transition-colors uppercase tracking-tight">{stat.value}</p>
                         </div>
                       ))}
                     </div>
@@ -715,7 +873,7 @@ export default function App() {
                       <p className="text-gray-400 max-w-sm mx-auto text-lg font-light leading-relaxed">
                         {error}
                       </p>
-                      <button 
+                      <button
                         onClick={loadingVariations ? handleGenerateVariations : handleGenerate}
                         className="px-8 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-colors"
                       >
@@ -741,14 +899,13 @@ export default function App() {
                 )}
               </div>
 
-              {/* Tips */}
-              <div className="glass-card p-10 rounded-[3rem] border border-indigo-500/10 flex items-start gap-6 bg-indigo-500/[0.02]">
-                <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 flex-shrink-0 border border-indigo-500/20">
+              <div className="bg-gray-50 p-10 rounded-[2rem] border border-gray-100 flex items-start gap-6">
+                <div className="w-12 h-12 rounded-full bg-blue-100/50 flex items-center justify-center text-blue-600 flex-shrink-0 border border-blue-200">
                   <Info className="w-6 h-6" />
                 </div>
                 <div className="space-y-2">
-                  <h4 className="text-xl font-bold text-white font-['Outfit']">Maximizing Accuracy</h4>
-                  <p className="text-gray-400 leading-relaxed font-light text-lg">
+                  <h4 className="text-xl font-bold text-black tracking-tight">Maximizing Accuracy</h4>
+                  <p className="text-gray-500 leading-relaxed font-medium text-lg">
                     AI models perform best on high-resolution images with clear depth. For optimal mapping, take the photo from the corner of the room looking diagonally across.
                   </p>
                 </div>
@@ -758,25 +915,28 @@ export default function App() {
         </div>
       </section>
 
-      {/* How to Use Section */}
+      {/* How it Works Section */}
       <section id="how-it-works" className="py-32 px-6 relative reveal">
         <div className="max-w-7xl mx-auto space-y-20">
-          <div className="text-center space-y-4">
-            <h2 className="text-5xl md:text-7xl font-bold text-white font-['Outfit'] tracking-tight">Simple. Seamless. <br /> <span className="text-indigo-400 italic">Fast.</span></h2>
-            <p className="text-gray-400 max-w-2xl mx-auto text-xl font-light leading-relaxed">Four simple steps to revolutionize your interior design workflow.</p>
+          <div className="text-center space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+              The Process
+            </div>
+            <h2 className="text-5xl md:text-7xl font-bold text-white font-['Outfit'] leading-tight">Simple. Seamless. <br /> <span className="text-gradient italic">Fast.</span></h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-xl font-light leading-relaxed">The standard workflow for architectural-grade staging.</p>
           </div>
           <div className="grid md:grid-cols-4 gap-8">
             {HOW_IT_WORKS.map((item, idx) => (
-              <div key={idx} className="glass-card p-10 rounded-[3rem] space-y-8 relative group border border-white/5">
-                <div className="absolute -top-6 -right-6 text-7xl font-black text-white/5 font-['Outfit'] select-none group-hover:text-indigo-500/10 transition-colors">
+              <div key={idx} className="glass-card p-10 space-y-8 relative group border-white/5 hover:border-indigo-500/30 rounded-[3rem]">
+                <div className="absolute top-2 right-6 text-7xl font-bold text-white/[0.02] select-none group-hover:text-white/[0.05] transition-colors z-0 font-['Outfit']">
                   {item.step}
                 </div>
-                <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center shadow-lg border border-indigo-500/20 group-hover:scale-110 transition-transform duration-500">
-                  {item.icon}
+                <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center shadow-inner border border-white/5 group-hover:scale-110 group-hover:bg-indigo-600 transition-all duration-500 relative z-10">
+                  {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-7 h-7 text-indigo-400 group-hover:text-white transition-colors" })}
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 relative z-10">
                   <h3 className="text-2xl font-bold text-white font-['Outfit']">{item.title}</h3>
-                  <p className="text-gray-400 font-light leading-relaxed">{item.description}</p>
+                  <p className="text-gray-400 leading-relaxed font-light text-sm">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -784,18 +944,18 @@ export default function App() {
         </div>
       </section>
 
-      {/* Features Section - Bento Grid Style from image */}
-      <section id="features" className="py-32 px-6 bg-white/[0.01] reveal">
+      {/* Features Section - Bento Grid Style */}
+      <section id="features" className="py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto space-y-20">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold uppercase tracking-widest text-purple-400">
                 Capabilities
               </div>
-              <h2 className="text-5xl md:text-6xl font-bold text-white font-['Outfit']">Premium <br /> Intelligence</h2>
+              <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight font-['Outfit']">Premium <br /> Intelligence</h2>
               <p className="text-gray-400 max-w-md text-xl font-light">Engineered for real estate agents, architects, and luxury property owners.</p>
             </div>
-            <button className="px-8 py-4 glass text-white rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center gap-3 w-fit group">
+            <button className="px-8 py-4 glass text-white rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center gap-3 group">
               Full Feature List <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -822,8 +982,7 @@ export default function App() {
           </div>
         </div>
       </section>
-
-      {/* Pricing Section - New from image */}
+      {/* Pricing Section */}
       <section id="pricing" className="py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto space-y-20">
           <div className="text-center space-y-6">
@@ -871,38 +1030,43 @@ export default function App() {
       {/* Testimonials */}
       <section id="reviews" className="py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto">
-          <div className="glass-card rounded-[5rem] p-12 md:p-24 relative overflow-hidden border border-white/5">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[150px] -z-10 animate-pulse"></div>
+          <div className="glass-card rounded-[4rem] p-12 md:p-24 relative overflow-hidden border border-white/5">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[150px] -z-10"></div>
             <div className="grid lg:grid-cols-2 gap-24 items-center">
               <div className="space-y-12">
-                <h2 className="text-5xl md:text-7xl font-bold text-white font-['Outfit'] leading-[1.1]">Trusted by <br /> <span className="text-gradient">Industry Icons</span></h2>
+                <div className="space-y-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+                    Testimonials
+                  </div>
+                  <h2 className="text-5xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Trusted by <br /> <span className="text-gradient">Industry Icons</span></h2>
+                </div>
                 <div className="flex gap-2">
-                  {[1,2,3,4,5].map(i => (
-                    <div key={i} className="text-indigo-400 font-bold text-3xl">★</div>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <Sparkles key={i} className="w-6 h-6 text-indigo-400 fill-current" />
                   ))}
                 </div>
                 <blockquote className="text-2xl md:text-3xl text-gray-300 font-light italic leading-relaxed">
-                  "LuminaVision has effectively cut our property staging costs by 95% while increasing buyer engagement by 300%. It is the gold standard of AI design."
+                  "Lumina Vision has effectively cut our property staging costs by 95% while increasing buyer engagement by 300%. It is the gold standard of AI design."
                 </blockquote>
                 <div className="flex items-center gap-6">
-                  <div className="p-1 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-2xl">
+                  <div className="p-1 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-xl">
                     <img src="https://picsum.photos/seed/ceo/100/100" alt="Avatar" className="w-20 h-20 rounded-full border-4 border-slate-900" />
                   </div>
                   <div>
                     <p className="text-white text-2xl font-bold font-['Outfit']">Jonathan Vance</p>
-                    <p className="text-indigo-400 font-semibold tracking-widest text-xs uppercase">Founder, Prime Estates Group</p>
+                    <p className="text-indigo-400 font-bold tracking-widest text-[10px] uppercase">Founder, Prime Estates Group</p>
                   </div>
                 </div>
               </div>
               <div className="grid gap-8">
                 {TESTIMONIALS.map((t, i) => (
-                  <div key={i} className="p-10 rounded-[3rem] glass-card border border-white/10 space-y-6 hover:scale-[1.02] transition-transform duration-500">
-                    <p className="text-gray-300 font-light text-lg italic leading-relaxed">"{t.content}"</p>
-                    <div className="flex items-center gap-4">
-                      <img src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full ring-2 ring-indigo-500/30" />
+                  <div key={i} className="p-10 rounded-[3rem] glass border border-white/5 space-y-8 hover:bg-white/[0.02] transition-all group">
+                    <p className="text-gray-400 font-light text-lg italic leading-relaxed">"{t.content}"</p>
+                    <div className="flex items-center gap-5">
+                      <img src={t.avatar} alt={t.name} className="w-14 h-14 rounded-2xl border border-white/10 object-cover" />
                       <div>
                         <p className="text-white font-bold font-['Outfit']">{t.name}</p>
-                        <p className="text-gray-500 text-xs font-semibold tracking-widest uppercase">{t.role}</p>
+                        <p className="text-gray-500 text-[10px] font-bold tracking-widest uppercase">{t.role}</p>
                       </div>
                     </div>
                   </div>
@@ -913,57 +1077,59 @@ export default function App() {
         </div>
       </section>
 
-      {/* FAQ Section - Split Layout from image */}
+      {/* FAQ Section */}
       <section id="faqs" className="py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-20 items-start">
-            <div className="space-y-10 sticky top-32">
+            <div className="space-y-12 sticky top-32">
               <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                  Support
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+                  Intel
                 </div>
-                <h2 className="text-5xl md:text-7xl font-bold text-white font-['Outfit'] leading-tight">Frequently Asked Questions</h2>
-                <p className="text-gray-400 text-xl font-light leading-relaxed">Deep dive into the LuminaVision intelligence. Can't find what you're looking for?</p>
+                <h2 className="text-5xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Frequently Asked Questions</h2>
+                <p className="text-gray-400 text-xl font-light leading-relaxed">Deep dive into the Lumina Vision intelligence. Can't find what you're looking for?</p>
               </div>
-              
-              <div className="relative group overflow-hidden rounded-[3rem] aspect-square lg:aspect-video">
-                <img 
-                  src="https://picsum.photos/seed/support/800/600" 
-                  alt="Support Team" 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+
+              <div className="relative group overflow-hidden rounded-[3rem] aspect-square lg:aspect-video shadow-2xl border border-white/5">
+                <img
+                  src="https://picsum.photos/seed/support/800/600"
+                  alt="Support Team"
+                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 opacity-60"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-10">
-                  <div className="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
-                    <p className="text-white font-bold">Didn't find what you were looking for?</p>
-                    <p className="text-gray-400 text-sm font-light">Our support team usually replies within 5 minutes.</p>
-                    <button className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all">
-                      Contact Support
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent flex flex-col justify-end p-10">
+                  <div className="glass backdrop-blur-2xl p-8 rounded-[2rem] border border-white/10 space-y-6">
+                    <div className="space-y-2">
+                      <p className="text-white font-bold text-xl font-['Outfit']">Need direct assistance?</p>
+                      <p className="text-gray-400 text-sm font-light">Our concierge team usually replies within 5 minutes.</p>
+                    </div>
+                    <button className="w-full py-4 bg-white text-slate-950 hover:bg-indigo-50 rounded-2xl font-bold transition-all shadow-xl">
+                      Contact Concierge
                     </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {FAQS.map((faq, idx) => (
-                <div 
-                  key={idx} 
-                  className={`glass-card border transition-all duration-500 rounded-[2rem] overflow-hidden ${activeFaq === idx ? 'border-indigo-500/50 bg-indigo-500/[0.02]' : 'border-white/5'}`}
+                <div
+                  key={idx}
+                  className={`glass-card border transition-all duration-500 overflow-hidden rounded-[2rem] ${activeFaq === idx ? 'border-indigo-500/30' : 'border-white/5'}`}
                 >
-                  <button 
+                  <button
                     onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                    className="w-full px-8 py-6 flex items-center justify-between text-left group"
+                    className="w-full px-10 py-8 flex items-center justify-between text-left group"
                   >
-                    <span className={`text-lg font-bold font-['Outfit'] transition-colors duration-300 ${activeFaq === idx ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>{faq.question}</span>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ${activeFaq === idx ? 'bg-indigo-600 rotate-45' : 'bg-white/5'}`}>
-                      <Plus className={`w-4 h-4 ${activeFaq === idx ? 'text-white' : 'text-gray-500'}`} />
+                    <span className={`text-xl font-bold font-['Outfit'] transition-colors duration-300 ${activeFaq === idx ? 'text-indigo-400' : 'text-white group-hover:text-indigo-400'}`}>{faq.question}</span>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${activeFaq === idx ? 'bg-indigo-600 text-white rotate-45' : 'bg-white/5 text-gray-500'}`}>
+                      <Plus className="w-5 h-5" />
                     </div>
                   </button>
-                  <div 
+                  <div
                     className={`overflow-hidden transition-all duration-500 ease-in-out ${activeFaq === idx ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
                   >
-                    <div className="px-8 pb-8 text-gray-400 font-light leading-relaxed">
+                    <div className="px-10 pb-10 text-gray-400 text-lg font-light leading-relaxed border-t border-white/5 pt-6">
                       {faq.answer}
                     </div>
                   </div>
@@ -974,48 +1140,48 @@ export default function App() {
         </div>
       </section>
 
-      {/* Related Articles Section - New from image */}
-      <section id="blog" className="py-32 px-6 bg-white/[0.01] reveal">
+      {/* Related Articles Section */}
+      <section id="blog" className="py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto space-y-20">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-[10px] font-bold uppercase tracking-widest text-orange-400">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
                 Insights
               </div>
-              <h2 className="text-5xl md:text-6xl font-bold text-white font-['Outfit']">Read blogs & learn <br /> more about!</h2>
+              <h2 className="text-5xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Journal & <br /> Intelligence.</h2>
             </div>
             <button className="px-8 py-4 glass text-white rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center gap-3 w-fit group">
               View all blogs <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-10">
             {BLOG_POSTS.map((post, idx) => (
-              <div key={idx} className="group cursor-pointer space-y-6">
-                <div className="relative aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-white/10">
-                  <img 
-                    src={post.image} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              <div key={idx} className="group cursor-pointer space-y-8">
+                <div className="relative aspect-[16/10] rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
+                  <img
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+                  <div className="absolute top-6 left-6 px-4 py-2 rounded-full glass backdrop-blur-2xl text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">
                     {post.category}
                   </div>
                 </div>
-                <div className="space-y-4 px-2">
-                  <div className="flex items-center gap-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {post.readTime}</span>
-                    <span>•</span>
-                    <span>{post.date}</span>
+                <div className="space-y-4 px-4">
+                  <div className="flex items-center gap-4 text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {post.readTime}</span>
+                    <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                    <span className="text-gray-500">{post.date}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-white font-['Outfit'] group-hover:text-indigo-400 transition-colors leading-tight">
+                  <h3 className="text-2xl font-bold text-white group-hover:text-indigo-400 transition-colors leading-tight font-['Outfit']">
                     {post.title}
                   </h3>
-                  <p className="text-gray-400 font-light line-clamp-2">
+                  <p className="text-gray-400 font-light line-clamp-2 text-base leading-relaxed">
                     Explore the intersection of artificial intelligence and high-end architectural design in our latest deep dive.
                   </p>
-                  <div className="pt-2 flex items-center gap-2 text-xs font-bold text-white group-hover:gap-4 transition-all">
-                    Read Article <ArrowRight className="w-4 h-4" />
+                  <div className="pt-4 flex items-center gap-3 text-xs font-bold text-white group-hover:gap-5 transition-all">
+                    Read Intelligence <ArrowRight className="w-4 h-4 text-indigo-400" />
                   </div>
                 </div>
               </div>
@@ -1024,181 +1190,200 @@ export default function App() {
         </div>
       </section>
 
-      {/* Footer - Expanded from image */}
-      <footer className="pt-32 pb-16 px-6 bg-black/40 backdrop-blur-3xl border-t border-white/5">
-        <div className="max-w-7xl mx-auto space-y-24">
-          <div className="grid md:grid-cols-12 gap-16">
-            <div className="md:col-span-4 space-y-8">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-indigo-600 rounded-[1.2rem] flex items-center justify-center shadow-2xl">
-                  <Sparkles className="text-white w-7 h-7" />
+      {/* Footer */}
+      <footer className="pt-32 pb-16 px-6 bg-slate-950 text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto space-y-32">
+          <div className="grid md:grid-cols-12 gap-20">
+            <div className="md:col-span-12 lg:col-span-5 space-y-10">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
+                  <img src="/favicon.png" alt="Lumina Vision Logo" className="w-12 h-12 object-contain brightness-110" />
                 </div>
-                <span className="text-3xl font-bold text-white font-['Outfit'] tracking-tight">Lumina<span className="text-indigo-400">Vision</span></span>
+                <span className="text-3xl font-bold text-white tracking-tight font-['Outfit']">Lumina <span className="text-indigo-400">Vision</span></span>
               </div>
-              <p className="text-gray-500 text-lg leading-relaxed font-light">
+              <p className="text-gray-400 text-xl leading-relaxed font-light max-w-md">
                 Setting the global standard for AI-driven real estate visualization and architectural storytelling.
               </p>
-              <div className="flex gap-4">
+              <div className="flex gap-5">
                 {[
-                  { icon: <Globe className="w-5 h-5" />, label: 'Web' },
-                  { icon: <Zap className="w-5 h-5" />, label: 'X' },
-                  { icon: <Shield className="w-5 h-5" />, label: 'Security' }
+                  { icon: <Globe className="w-6 h-6" />, label: 'Web' },
+                  { icon: <Zap className="w-6 h-6" />, label: 'X' },
+                  { icon: <Shield className="w-6 h-6" />, label: 'Security' }
                 ].map((social, idx) => (
-                  <a key={idx} href="#" className="w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-indigo-500 hover:bg-indigo-500/10 transition-all group">
+                  <a key={idx} href="#" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 transition-all group">
                     {React.cloneElement(social.icon, { className: 'w-5 h-5 group-hover:scale-110 transition-transform' })}
                   </a>
                 ))}
               </div>
             </div>
-            
-            <div className="md:col-span-2 space-y-8">
-              <h4 className="text-white text-lg font-bold font-['Outfit']">Main Pages</h4>
-              <ul className="space-y-4 text-gray-500 font-medium">
-                {['Preview', 'Features', 'How it works', 'Pricing', 'Reviews'].map(link => (
-                  <li key={link}><a href={`#${link.toLowerCase().replace(/\s/g, '-')}`} className="hover:text-indigo-400 transition-colors">{link}</a></li>
+
+            <div className="md:col-span-4 lg:col-span-2 space-y-8">
+              <h4 className="text-white text-lg font-bold font-['Outfit']">Ecosystem</h4>
+              <ul className="space-y-4">
+                {['Showcase', 'Features', 'The Process', 'Pricing'].map(link => (
+                  <li key={link}><a href={`#${link.toLowerCase().replace(/\s/g, '-')}`} className="text-gray-500 hover:text-indigo-400 transition-colors text-sm uppercase tracking-widest font-bold">{link}</a></li>
                 ))}
               </ul>
             </div>
 
-            <div className="md:col-span-2 space-y-8">
-              <h4 className="text-white text-lg font-bold font-['Outfit']">Utility Pages</h4>
-              <ul className="space-y-4 text-gray-500 font-medium">
-                {['Style Guide', 'Licenses', 'Changelog', 'Coming Soon'].map(link => (
-                  <li key={link}><a href="#" className="hover:text-indigo-400 transition-colors">{link}</a></li>
+            <div className="md:col-span-4 lg:col-span-2 space-y-8">
+              <h4 className="text-white text-lg font-bold font-['Outfit']">Support</h4>
+              <ul className="space-y-4">
+                {['Documentation', 'API Reference', 'Status', 'Concierge'].map(link => (
+                  <li key={link}><a href="#" className="text-gray-500 hover:text-indigo-400 transition-colors text-sm uppercase tracking-widest font-bold">{link}</a></li>
                 ))}
               </ul>
             </div>
 
-            <div className="md:col-span-4 space-y-8">
-              <h4 className="text-white text-lg font-bold font-['Outfit']">Get weekly news straight to your inbox</h4>
-              <p className="text-gray-500 font-light">Exclusive AI design trends and architectural updates delivered weekly.</p>
-              <div className="flex gap-2">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 w-full font-medium"
-                />
-                <button className="px-8 bg-white text-black font-black rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center">
-                  Subscribe
-                </button>
+            <div className="md:col-span-4 lg:col-span-3 space-y-10">
+              <div className="glass p-8 rounded-[2rem] border border-white/10 space-y-6">
+                <p className="text-sm font-bold text-indigo-400 uppercase tracking-widest">Newsletter</p>
+                <div className="space-y-4">
+                  <input
+                    type="email"
+                    placeholder="concierge@lumina.ai"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                  <button className="w-full py-4 bg-white text-black rounded-xl font-bold hover:shadow-2xl transition-all">Subscribe</button>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="pt-12 border-t border-white/5 flex flex-wrap items-center justify-between gap-8">
-            <p className="text-gray-600 text-xs font-bold uppercase tracking-[0.3em]">Copyright © LuminaVision | Designed by Lumina Labs</p>
-            <div className="flex gap-10 text-gray-600 text-xs font-bold uppercase tracking-widest">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+
+          <div className="pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+            <p className="text-gray-600 text-sm font-medium">© 2024 Lumina Vision AI. All architectural rights reserved.</p>
+            <div className="flex gap-10 text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">
+              <a href="#" className="hover:text-white transition-colors">Privacy Privacy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Cookies</a>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Auth Modal - Inspiration from Hero Section / Split Layout */}
-      {isAuthModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setIsAuthModalOpen(false)}></div>
-          <div className="relative w-full max-w-4xl glass-card rounded-[4rem] overflow-hidden border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-500">
-            <div className="grid md:grid-cols-2">
-              {/* Left Side - Visual */}
-              <div className="hidden md:block relative overflow-hidden">
-                <img src="https://picsum.photos/seed/auth/800/1200" alt="Auth" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/90 to-transparent flex flex-col justify-end p-12 space-y-6">
-                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-2xl">
-                    <Sparkles className="text-indigo-600 w-8 h-8" />
+      {/* Auth Modal */}
+      <AnimatePresence>
+        {isAuthModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 text-white">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-2xl"
+              onClick={() => setIsAuthModalOpen(false)}
+            ></motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-4xl glass-card rounded-[4rem] overflow-hidden border border-white/10 shadow-2xl"
+            >
+              <div className="grid md:grid-cols-2">
+                {/* Left Side - Visual */}
+                <div className="hidden md:block relative overflow-hidden">
+                  <img src="https://picsum.photos/seed/auth/800/1200" alt="Auth" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-950 via-indigo-950/40 to-transparent flex flex-col justify-end p-12 space-y-6">
+                    <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden border border-white/20">
+                      <img src="/favicon.png" alt="Lumina Vision Logo" className="w-10 h-10 object-contain brightness-125 saturate-150 shadow-xl" />
+                    </div>
+                    <h3 className="text-4xl font-bold text-white font-['Outfit'] leading-tight">Join the future of <br /> interior design.</h3>
+                    <p className="text-indigo-200 font-light font-['Outfit']">Save your generations, access premium styles, and export in 4K.</p>
                   </div>
-                  <h3 className="text-4xl font-bold text-white font-['Outfit'] leading-tight">Join the future of <br /> interior design.</h3>
-                  <p className="text-indigo-200 font-light">Save your generations, access premium styles, and export in 4K.</p>
-                </div>
-              </div>
-
-              {/* Right Side - Form */}
-              <div className="p-12 md:p-16 space-y-10">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-bold text-white font-['Outfit']">
-                      {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
-                    </h2>
-                    <p className="text-gray-500 font-light">
-                      {authMode === 'login' ? 'Enter your details to continue' : 'Start your design journey today'}
-                    </p>
-                  </div>
-                  <button onClick={() => setIsAuthModalOpen(false)} className="text-gray-500 hover:text-white transition-colors">
-                    <X className="w-6 h-6" />
-                  </button>
                 </div>
 
-                <form onSubmit={handleAuth} className="space-y-6">
-                  <div className="space-y-4">
+                {/* Right Side - Form */}
+                <div className="p-12 md:p-16 space-y-10">
+                  <div className="flex items-center justify-between">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
-                      <div className="relative group">
-                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                          type="email" 
-                          required
-                          placeholder="name@agency.com"
-                          className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium transition-all"
-                        />
-                      </div>
+                      <h2 className="text-3xl font-bold text-white font-['Outfit']">
+                        {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
+                      </h2>
+                      <p className="text-gray-500 font-light">
+                        {authMode === 'login' ? 'Enter your details to continue' : 'Start your design journey today'}
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Password</label>
-                      <div className="relative group">
-                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                          type="password" 
-                          required
-                          placeholder="••••••••"
-                          className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <button type="submit" className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-lg font-bold transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-3">
-                    {authMode === 'login' ? 'Sign In' : 'Create Account'}
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </form>
-
-                <div className="space-y-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                    <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-[#0f172a] px-4 text-gray-600 font-bold">Or continue with</span></div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={handleAuth}
-                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white font-bold transition-all"
-                    >
-                      <Chrome className="w-5 h-5" /> Google
-                    </button>
-                    <button 
-                      onClick={handleAuth}
-                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white font-bold transition-all"
-                    >
-                      <Github className="w-5 h-5" /> GitHub
+                    <button onClick={() => setIsAuthModalOpen(false)} className="w-10 h-10 rounded-full glass border border-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all">
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
-                </div>
 
-                <p className="text-center text-gray-500 text-sm font-light">
-                  {authMode === 'login' ? "Don't have an account?" : "Already have an account?"}
-                  <button 
-                    onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                    className="text-indigo-400 font-bold ml-2 hover:underline"
-                  >
-                    {authMode === 'login' ? 'Sign Up' : 'Sign In'}
-                  </button>
-                </p>
+                  <form onSubmit={handleAuth} className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
+                        <div className="relative group">
+                          <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-indigo-400 transition-colors" />
+                          <input
+                            type="email"
+                            required
+                            placeholder="concierge@lumina.ai"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Password</label>
+                        <div className="relative group">
+                          <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 group-focus-within:text-indigo-400 transition-colors" />
+                          <input
+                            type="password"
+                            required
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button type="submit" className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-lg font-bold transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-3 active:scale-[0.98]">
+                      {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </form>
+
+                  <div className="space-y-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                      <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-slate-900 px-4 text-gray-600 font-bold">Or continue with</span></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white font-bold transition-all"
+                      >
+                        <Chrome className="w-5 h-5" /> Google
+                      </button>
+                      <button
+                        type="button"
+                        className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white font-bold transition-all"
+                      >
+                        <Github className="w-5 h-5" /> GitHub
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-center text-gray-500 text-sm font-light">
+                    {authMode === 'login' ? "Don't have an account?" : "Already have an account?"}
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                      className="text-indigo-400 font-bold ml-2 hover:underline"
+                    >
+                      {authMode === 'login' ? 'Sign Up' : 'Sign In'}
+                    </button>
+                  </p>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
