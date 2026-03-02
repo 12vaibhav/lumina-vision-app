@@ -85,6 +85,8 @@ export default function App() {
 
   // Auth state listener
   useEffect(() => {
+    if (!supabase) return;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser({
@@ -176,8 +178,8 @@ export default function App() {
       setStatusMessage(null);
       setResultImage(result.imageUrl);
 
-      // Save to Supabase (if logged in)
-      if (user) {
+      // Save to Supabase (if logged in and supabase is initialized)
+      if (user && supabase) {
         const { data: insertedData, error: insertError } = await supabase
           .from('generations')
           .insert([
@@ -304,6 +306,8 @@ export default function App() {
     setError(null);
 
     try {
+      if (!supabase) throw new Error("Database service is currently unavailable. Please check environment variables.");
+
       if (authMode === 'login') {
         const { error: authError } = await supabase.auth.signInWithPassword({
           email,
@@ -334,7 +338,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     setUser(null);
   };
 
