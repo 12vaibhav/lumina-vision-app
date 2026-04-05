@@ -238,3 +238,11 @@ h4 {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.4);
 }
+
+/* AI Chatbot Widget Mobile Adjustments */
+@media (max-width: 480px) {
+  #chatlayer-container {
+    width: calc(100vw - 48px) !important;
+    max-height: 75vh !important;
+  }
+}
