@@ -369,7 +369,7 @@ export default function App() {
             <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 overflow-hidden">
               <img src="/favicon.png" alt="Lumina Vision Logo" className="w-10 h-10 object-contain brightness-110" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white font-['Outfit']">Lumina <span className="text-indigo-400">Vision</span></span>
+            <span className="text-xl md:text-2xl font-bold tracking-tight text-white font-['Outfit']">Lumina <span className="text-indigo-400">Vision</span></span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -405,7 +405,7 @@ export default function App() {
                 }}
                 className="px-6 py-2.5 bg-white text-gray-900 rounded-full text-sm font-bold hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all active:scale-95 flex items-center gap-2"
               >
-                <LogIn className="w-4 h-4" /> Sign In
+                <LogIn className="w-4 h-4" /> <span className="hidden sm:inline">Sign In</span>
               </button>
             )}
             <button className="md:hidden text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -427,7 +427,7 @@ export default function App() {
       )}
 
       {/* Hero Section */}
-      <section id="home" className="pt-48 pb-32 px-6">
+      <section id="home" className="pt-32 pb-20 md:pt-48 md:pb-32 px-6">
         <div className="max-w-6xl mx-auto text-center space-y-10 reveal active">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-white/10 text-xs font-bold uppercase tracking-[0.2em] text-indigo-300">
             <span className="relative flex h-2 w-2">
@@ -437,23 +437,23 @@ export default function App() {
             The Future of Real Estate Design
           </div>
 
-          <h1 className="text-6xl md:text-9xl font-bold tracking-tight text-white leading-[1] font-['Outfit']">
+          <h1 className="text-4xl sm:text-5xl md:text-9xl font-bold tracking-tight text-white leading-[1.1] md:leading-[1] font-['Outfit']">
             Design <span className="text-gradient italic">Without</span> <br className="hidden md:block" /> Boundaries
           </h1>
 
-          <p className="max-w-3xl mx-auto text-xl md:text-2xl text-gray-400 leading-relaxed font-light">
+          <p className="max-w-3xl mx-auto text-lg md:text-2xl text-gray-400 leading-relaxed font-light px-4 md:px-0">
             Instantly stage empty properties with AI. Transform old rooms into modern masterpieces with 4K photorealistic rendering.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-6 pt-6">
             <button
               onClick={scrollToTool}
-              className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] text-xl font-bold transition-all shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center gap-3 group"
+              className="w-full sm:w-auto px-8 py-4 md:px-10 md:py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] text-lg md:text-xl font-bold transition-all shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center justify-center gap-3 group"
             >
               Reimagine Space
               <ArrowUpRight className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </button>
-            <button className="px-10 py-5 glass text-white rounded-[2rem] text-xl font-bold hover:bg-white/10 transition-all flex items-center gap-3">
+            <button className="w-full sm:w-auto px-8 py-4 md:px-10 md:py-5 glass text-white rounded-[2rem] text-lg md:text-xl font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-3">
               <Play className="w-5 h-5 fill-current" /> Watch Showreel
             </button>
           </div>
@@ -473,10 +473,10 @@ export default function App() {
                 <p className="text-white text-lg font-medium leading-relaxed">
                   "Ask Lumina AI to create with you! The more details you share, the better it will deliver. Or, pick a pre-made prompt below."
                 </p>
-                <div className="flex gap-3 pt-2">
-                  <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-400 font-bold hover:bg-white/10 cursor-pointer transition-colors">Modern Penthouse</span>
-                  <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-400 font-bold hover:bg-white/10 cursor-pointer transition-colors">Rustic Cabin</span>
-                  <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-400 font-bold hover:bg-white/10 cursor-pointer transition-colors">Industrial Loft</span>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-white/5 border border-white/10 text-[9px] md:text-[10px] text-gray-400 font-bold hover:bg-white/10 cursor-pointer transition-colors">Modern Penthouse</span>
+                  <span className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-white/5 border border-white/10 text-[9px] md:text-[10px] text-gray-400 font-bold hover:bg-white/10 cursor-pointer transition-colors">Rustic Cabin</span>
+                  <span className="px-2 py-1 md:px-3 md:py-1 rounded-full bg-white/5 border border-white/10 text-[9px] md:text-[10px] text-gray-400 font-bold hover:bg-white/10 cursor-pointer transition-colors">Industrial Loft</span>
                 </div>
               </div>
             </div>
@@ -485,13 +485,13 @@ export default function App() {
       </section>
 
       {/* Partners Marquee */}
-      <section className="py-20 border-y border-white/5 bg-slate-950/50 overflow-hidden">
+      <section className="py-10 md:py-20 border-y border-white/5 bg-slate-950/50 overflow-hidden">
         <div className="marquee-wrapper">
           <div className="marquee-content">
             {['Architectural Digest', 'Vogue Living', 'Dwell', 'Dezeen', 'Elle Decor', 'Design Milk', 'Wallpaper*', 'Hypebeast Home'].map((partner, i) => (
               <div key={i} className="flex items-center gap-4 px-8">
                 <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all" />
-                <span className="text-2xl font-bold text-white/30 hover:text-indigo-400 transition-colors cursor-default font-['Outfit'] uppercase tracking-widest whitespace-nowrap">
+                <span className="text-lg md:text-2xl font-bold text-white/30 hover:text-indigo-400 transition-colors cursor-default font-['Outfit'] uppercase tracking-widest whitespace-nowrap">
                   {partner}
                 </span>
               </div>
@@ -502,7 +502,7 @@ export default function App() {
             {['Architectural Digest', 'Vogue Living', 'Dwell', 'Dezeen', 'Elle Decor', 'Design Milk', 'Wallpaper*', 'Hypebeast Home'].map((partner, i) => (
               <div key={i} className="flex items-center gap-4 px-8">
                 <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all" />
-                <span className="text-2xl font-bold text-white/30 hover:text-indigo-400 transition-colors cursor-default font-['Outfit'] uppercase tracking-widest whitespace-nowrap">
+                <span className="text-lg md:text-2xl font-bold text-white/30 hover:text-indigo-400 transition-colors cursor-default font-['Outfit'] uppercase tracking-widest whitespace-nowrap">
                   {partner}
                 </span>
               </div>
@@ -514,14 +514,14 @@ export default function App() {
       {/* History Section */}
       {/* History Section - Inspiration from "How it works" or "Blog" */}
       {showHistory && user && (
-        <section id="history" className="py-32 px-6 bg-indigo-600/5 reveal">
+        <section id="history" className="py-20 md:py-32 px-6 bg-indigo-600/5 reveal">
           <div className="max-w-7xl mx-auto space-y-16">
             <div className="flex items-center justify-between">
               <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
                   Your Creations
                 </div>
-                <h2 className="text-5xl font-bold text-white font-['Outfit']">Design History</h2>
+                <h2 className="text-3xl md:text-5xl font-bold text-white font-['Outfit']">Design History</h2>
               </div>
               <button
                 onClick={() => setShowHistory(false)}
@@ -587,24 +587,24 @@ export default function App() {
       )}
 
       {/* Main Tool Section */}
-      <section id="showcase" ref={toolRef} className="py-24 px-6 relative reveal">
+      <section id="showcase" ref={toolRef} className="py-16 md:py-24 px-6 relative reveal">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-12 items-start">
 
             {/* Control Panel - Redesigned to match Main Tool Section in image */}
             <div className="lg:col-span-5 space-y-8 sticky top-28">
-              <div className="glass-card rounded-[3rem] p-10 space-y-10 border border-white/10 shadow-2xl">
+              <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 space-y-8 md:space-y-10 border border-white/10 shadow-2xl">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
                     <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.3em]">AI Design Lab v4.0</span>
                   </div>
-                  <h2 className="text-4xl font-bold text-white font-['Outfit']">Reimagine Space</h2>
-                  <p className="text-gray-400 font-light text-lg">Describe your vision or use our precision controls.</p>
+                  <h2 className="text-3xl md:text-4xl font-bold text-white font-['Outfit']">Reimagine Space</h2>
+                  <p className="text-gray-400 font-light text-base md:text-lg">Describe your vision or use our precision controls.</p>
                 </div>
 
                 {/* Selections - Dropdown style from image */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Room Type</label>
                     <div className="relative group">
@@ -639,7 +639,7 @@ export default function App() {
                   <div className="relative">
                     <textarea
                       placeholder="Describe specific details like 'velvet textures', 'oak flooring', or 'minimalist art'..."
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-6 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-light min-h-[120px] resize-none placeholder:text-gray-600"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-[1.5rem] md:rounded-[2rem] px-5 py-4 md:px-6 md:py-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-light min-h-[100px] md:min-h-[120px] resize-none placeholder:text-gray-600"
                     />
                     <div className="absolute bottom-4 right-4 flex gap-2">
                       <button className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
@@ -653,7 +653,7 @@ export default function App() {
                 <div className="space-y-4">
                   <label className="relative group block">
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    <div className="w-full h-48 border-2 border-dashed border-white/10 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 group-hover:border-indigo-500/50 transition-all bg-white/[0.02] overflow-hidden group-hover:shadow-[0_0_30px_rgba(99,102,241,0.1)]">
+                    <div className="w-full h-40 md:h-48 border-2 border-dashed border-white/10 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center gap-4 group-hover:border-indigo-500/50 transition-all bg-white/[0.02] overflow-hidden group-hover:shadow-[0_0_30px_rgba(99,102,241,0.1)]">
                       {config.image ? (
                         <div className="relative w-full h-full group">
                           <img src={config.image} alt="Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -724,11 +724,11 @@ export default function App() {
                   </div>
                 )}
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <button
                     onClick={handleGenerate}
                     disabled={loading || loadingVariations || !config.image}
-                    className={`flex-1 py-6 rounded-2xl text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95'}`}
+                    className={`flex-1 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95'}`}
                   >
                     {loading ? (
                       <div className="flex items-center gap-3">
@@ -751,7 +751,7 @@ export default function App() {
                   <button
                     onClick={handleGenerateVariations}
                     disabled={loading || loadingVariations || !config.image}
-                    className={`flex-1 py-6 rounded-2xl text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-95'}`}
+                    className={`flex-1 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-95'}`}
                   >
                     {loadingVariations ? (
                       <div className="flex items-center gap-3">
@@ -776,7 +776,7 @@ export default function App() {
 
             {/* Preview Output */}
             <div className="lg:col-span-7 space-y-10">
-              <div className="glass rounded-[4rem] p-4 lg:p-12 border border-white/10 min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden">
+              <div className="glass rounded-[2.5rem] md:rounded-[4rem] p-4 md:p-8 lg:p-12 border border-white/10 min-h-[400px] md:min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 blur-[100px] pointer-events-none"></div>
 
@@ -854,7 +854,7 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                       {[
                         { label: 'Theme', value: config.style },
                         { label: 'Category', value: config.roomType },
@@ -891,8 +891,8 @@ export default function App() {
                       <Sparkles className="w-12 h-12 text-gray-600 group-hover:text-indigo-400 transition-colors duration-500" />
                     </div>
                     <div className="space-y-4">
-                      <h3 className="text-4xl font-bold text-white font-['Outfit']">Awaiting Your Input</h3>
-                      <p className="text-gray-400 max-w-sm mx-auto text-lg font-light">Complete the configuration on the left to witness an AI-driven transformation of your room.</p>
+                      <h3 className="text-2xl md:text-4xl font-bold text-white font-['Outfit']">Awaiting Your Input</h3>
+                      <p className="text-gray-400 max-w-sm mx-auto text-base md:text-lg font-light px-4">Complete the configuration on the left to witness an AI-driven transformation of your room.</p>
                     </div>
                     <div className="flex gap-4 justify-center">
                       <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
@@ -903,13 +903,13 @@ export default function App() {
                 )}
               </div>
 
-              <div className="bg-gray-50 p-10 rounded-[2rem] border border-gray-100 flex items-start gap-6">
-                <div className="w-12 h-12 rounded-full bg-blue-100/50 flex items-center justify-center text-blue-600 flex-shrink-0 border border-blue-200">
+              <div className="bg-white/[0.03] p-6 md:p-10 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row items-start gap-6">
+                <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 flex-shrink-0 border border-indigo-500/20">
                   <Info className="w-6 h-6" />
                 </div>
                 <div className="space-y-2">
-                  <h4 className="text-xl font-bold text-black tracking-tight">Maximizing Accuracy</h4>
-                  <p className="text-gray-500 leading-relaxed font-medium text-lg">
+                  <h4 className="text-lg md:text-xl font-bold text-white tracking-tight">Maximizing Accuracy</h4>
+                  <p className="text-gray-400 leading-relaxed font-light text-sm md:text-base">
                     AI models perform best on high-resolution images with clear depth. For optimal mapping, take the photo from the corner of the room looking diagonally across.
                   </p>
                 </div>
@@ -920,19 +920,19 @@ export default function App() {
       </section>
 
       {/* How it Works Section */}
-      <section id="how-it-works" className="py-32 px-6 relative reveal">
+      <section id="how-it-works" className="py-20 md:py-32 px-6 relative reveal">
         <div className="max-w-7xl mx-auto space-y-20">
           <div className="text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
               The Process
             </div>
-            <h2 className="text-5xl md:text-7xl font-bold text-white font-['Outfit'] leading-tight">Simple. Seamless. <br /> <span className="text-gradient italic">Fast.</span></h2>
+            <h2 className="text-4xl md:text-7xl font-bold text-white font-['Outfit'] leading-tight">Simple. Seamless. <br /> <span className="text-gradient italic">Fast.</span></h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-xl font-light leading-relaxed">The standard workflow for architectural-grade staging.</p>
           </div>
           <div className="grid md:grid-cols-4 gap-8">
             {HOW_IT_WORKS.map((item, idx) => (
-              <div key={idx} className="glass-card p-10 space-y-8 relative group border-white/5 hover:border-indigo-500/30 rounded-[3rem]">
-                <div className="absolute top-2 right-6 text-7xl font-bold text-white/[0.02] select-none group-hover:text-white/[0.05] transition-colors z-0 font-['Outfit']">
+              <div key={idx} className="glass-card p-8 md:p-10 space-y-8 relative group border-white/5 hover:border-indigo-500/30 rounded-[2.5rem] md:rounded-[3rem]">
+                <div className="absolute top-2 right-6 text-6xl md:text-7xl font-bold text-white/[0.02] select-none group-hover:text-white/[0.05] transition-colors z-0 font-['Outfit']">
                   {item.step}
                 </div>
                 <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center shadow-inner border border-white/5 group-hover:scale-110 group-hover:bg-indigo-600 transition-all duration-500 relative z-10">
@@ -949,14 +949,14 @@ export default function App() {
       </section>
 
       {/* Features Section - Bento Grid Style */}
-      <section id="features" className="py-32 px-6 reveal">
+      <section id="features" className="py-20 md:py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto space-y-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold uppercase tracking-widest text-purple-400">
                 Capabilities
               </div>
-              <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-tight font-['Outfit']">Premium <br /> Intelligence</h2>
+              <h2 className="text-4xl md:text-7xl font-bold text-white tracking-tight leading-tight font-['Outfit']">Premium <br /> Intelligence</h2>
               <p className="text-gray-400 max-w-md text-xl font-light">Engineered for real estate agents, architects, and luxury property owners.</p>
             </div>
             <button className="px-8 py-4 glass text-white rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center gap-3 group">
@@ -965,7 +965,7 @@ export default function App() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {FEATURES.map((feature, idx) => (
-              <div key={idx} className={`group p-10 rounded-[3rem] glass-card border border-white/5 flex flex-col justify-between ${idx === 0 || idx === 5 ? 'md:col-span-2' : ''}`}>
+              <div key={idx} className={`group p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] glass-card border border-white/5 flex flex-col justify-between ${idx === 0 || idx === 5 ? 'md:col-span-2' : ''}`}>
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
                     <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center group-hover:bg-indigo-600 group-hover:rotate-6 transition-all duration-500 shadow-inner">
@@ -987,18 +987,18 @@ export default function App() {
         </div>
       </section>
       {/* Pricing Section */}
-      <section id="pricing" className="py-32 px-6 reveal">
+      <section id="pricing" className="py-20 md:py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto space-y-20">
           <div className="text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold uppercase tracking-widest text-purple-400">
               Pricing Plans
             </div>
-            <h2 className="text-5xl md:text-7xl font-bold text-white font-['Outfit']">Simple, scalable pricing</h2>
+            <h2 className="text-4xl md:text-7xl font-bold text-white font-['Outfit']">Simple, scalable pricing</h2>
             <p className="text-gray-400 max-w-2xl mx-auto text-xl font-light">Choose the plan that fits your architectural vision.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {PRICING_PLANS.map((plan, idx) => (
-              <div key={idx} className={`relative p-10 rounded-[3rem] glass-card border flex flex-col ${plan.highlight ? 'border-indigo-500/50 bg-indigo-500/[0.03] scale-105 z-10' : 'border-white/5'}`}>
+              <div key={idx} className={`relative p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] glass-card border flex flex-col ${plan.highlight ? 'border-indigo-500/50 bg-indigo-500/[0.03] sm:scale-105 z-10' : 'border-white/5'}`}>
                 {plan.highlight && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full uppercase tracking-widest shadow-lg">
                     Most Popular
@@ -1034,7 +1034,7 @@ export default function App() {
       {/* Testimonials */}
       <section id="reviews" className="py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto">
-          <div className="glass-card rounded-[4rem] p-12 md:p-24 relative overflow-hidden border border-white/5">
+          <div className="glass-card rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-24 relative overflow-hidden border border-white/5">
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[150px] -z-10"></div>
             <div className="grid lg:grid-cols-2 gap-24 items-center">
               <div className="space-y-12">
@@ -1042,14 +1042,14 @@ export default function App() {
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
                     Testimonials
                   </div>
-                  <h2 className="text-5xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Trusted by <br /> <span className="text-gradient">Industry Icons</span></h2>
+                  <h2 className="text-4xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Trusted by <br /> <span className="text-gradient">Industry Icons</span></h2>
                 </div>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Sparkles key={i} className="w-6 h-6 text-indigo-400 fill-current" />
                   ))}
                 </div>
-                <blockquote className="text-2xl md:text-3xl text-gray-300 font-light italic leading-relaxed">
+                <blockquote className="text-xl md:text-3xl text-gray-300 font-light italic leading-relaxed">
                   "Lumina Vision has effectively cut our property staging costs by 95% while increasing buyer engagement by 300%. It is the gold standard of AI design."
                 </blockquote>
                 <div className="flex items-center gap-6">
@@ -1064,7 +1064,7 @@ export default function App() {
               </div>
               <div className="grid gap-8">
                 {TESTIMONIALS.map((t, i) => (
-                  <div key={i} className="p-10 rounded-[3rem] glass border border-white/5 space-y-8 hover:bg-white/[0.02] transition-all group">
+                  <div key={i} className="p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] glass border border-white/5 space-y-6 md:space-y-8 hover:bg-white/[0.02] transition-all group">
                     <p className="text-gray-400 font-light text-lg italic leading-relaxed">"{t.content}"</p>
                     <div className="flex items-center gap-5">
                       <img src={t.avatar} alt={t.name} className="w-14 h-14 rounded-2xl border border-white/10 object-cover" />
@@ -1082,7 +1082,7 @@ export default function App() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faqs" className="py-32 px-6 reveal">
+      <section id="faqs" className="py-20 md:py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-20 items-start">
             <div className="space-y-12 sticky top-32">
@@ -1090,7 +1090,7 @@ export default function App() {
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
                   Intel
                 </div>
-                <h2 className="text-5xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Frequently Asked Questions</h2>
+                <h2 className="text-4xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Frequently Asked Questions</h2>
                 <p className="text-gray-400 text-xl font-light leading-relaxed">Deep dive into the Lumina Vision intelligence. Can't find what you're looking for?</p>
               </div>
 
@@ -1119,13 +1119,13 @@ export default function App() {
               {FAQS.map((faq, idx) => (
                 <div
                   key={idx}
-                  className={`glass-card border transition-all duration-500 overflow-hidden rounded-[2rem] ${activeFaq === idx ? 'border-indigo-500/30' : 'border-white/5'}`}
+                  className={`glass-card border transition-all duration-500 overflow-hidden rounded-[1.5rem] md:rounded-[2rem] ${activeFaq === idx ? 'border-indigo-500/30' : 'border-white/5'}`}
                 >
                   <button
                     onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
                     className="w-full px-10 py-8 flex items-center justify-between text-left group"
                   >
-                    <span className={`text-xl font-bold font-['Outfit'] transition-colors duration-300 ${activeFaq === idx ? 'text-indigo-400' : 'text-white group-hover:text-indigo-400'}`}>{faq.question}</span>
+                    <span className={`text-lg md:text-xl font-bold font-['Outfit'] transition-colors duration-300 ${activeFaq === idx ? 'text-indigo-400' : 'text-white group-hover:text-indigo-400'}`}>{faq.question}</span>
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${activeFaq === idx ? 'bg-indigo-600 text-white rotate-45' : 'bg-white/5 text-gray-500'}`}>
                       <Plus className="w-5 h-5" />
                     </div>
@@ -1145,14 +1145,14 @@ export default function App() {
       </section>
 
       {/* Related Articles Section */}
-      <section id="blog" className="py-32 px-6 reveal">
+      <section id="blog" className="py-20 md:py-32 px-6 reveal">
         <div className="max-w-7xl mx-auto space-y-20">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
                 Insights
               </div>
-              <h2 className="text-5xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Journal & <br /> Intelligence.</h2>
+              <h2 className="text-4xl md:text-7xl font-bold text-white leading-tight font-['Outfit']">Journal & <br /> Intelligence.</h2>
             </div>
             <button className="px-8 py-4 glass text-white rounded-2xl font-bold hover:bg-white/5 transition-all flex items-center gap-3 w-fit group">
               View all blogs <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -1161,7 +1161,7 @@ export default function App() {
           <div className="grid md:grid-cols-3 gap-10">
             {BLOG_POSTS.map((post, idx) => (
               <div key={idx} className="group cursor-pointer space-y-8">
-                <div className="relative aspect-[16/10] rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
+                <div className="relative aspect-video rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
                   <img
                     src={post.image}
                     alt={post.title}
@@ -1195,7 +1195,7 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="pt-32 pb-16 px-6 bg-slate-950 text-white relative overflow-hidden">
+      <footer className="pt-20 md:pt-32 pb-16 px-6 bg-slate-950 text-white relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
         <div className="max-w-7xl mx-auto space-y-32">
           <div className="grid md:grid-cols-12 gap-20">
@@ -1258,7 +1258,7 @@ export default function App() {
           <div className="pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
             <p className="text-gray-600 text-sm font-medium">© 2024 Lumina Vision AI. All architectural rights reserved.</p>
             <div className="flex gap-10 text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">
-              <a href="#" className="hover:text-white transition-colors">Privacy Privacy</a>
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
               <a href="#" className="hover:text-white transition-colors">Cookies</a>
             </div>
@@ -1281,7 +1281,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl glass-card rounded-[4rem] overflow-hidden border border-white/10 shadow-2xl"
+              className="relative w-full max-w-4xl glass-card rounded-[2.5rem] md:rounded-[4rem] overflow-hidden border border-white/10 shadow-2xl"
             >
               <div className="grid md:grid-cols-2">
                 {/* Left Side - Visual */}
@@ -1297,10 +1297,10 @@ export default function App() {
                 </div>
 
                 {/* Right Side - Form */}
-                <div className="p-12 md:p-16 space-y-10">
+                <div className="p-8 md:p-16 space-y-10">
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
-                      <h2 className="text-3xl font-bold text-white font-['Outfit']">
+                      <h2 className="text-2xl md:text-3xl font-bold text-white font-['Outfit']">
                         {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
                       </h2>
                       <p className="text-gray-500 font-light">
