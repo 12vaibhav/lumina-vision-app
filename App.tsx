@@ -609,7 +609,7 @@ export default function App() {
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Room Type</label>
                     <div className="relative group">
                       <select
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
                         value={config.roomType}
                         onChange={(e) => setConfig(prev => ({ ...prev, roomType: e.target.value as RoomType }))}
                       >
@@ -622,7 +622,7 @@ export default function App() {
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Interior Style</label>
                     <div className="relative group">
                       <select
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
                         value={config.style}
                         onChange={(e) => setConfig(prev => ({ ...prev, style: e.target.value as InteriorStyle }))}
                       >
@@ -694,13 +694,13 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => setConfig(prev => ({ ...prev, lighting: LightingMode.Day }))}
-                      className={`flex items-center justify-center gap-3 py-4 rounded-2xl border transition-all duration-300 ${config.lighting === LightingMode.Day ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                      className={`flex items-center justify-center gap-2 py-3 md:py-4 rounded-xl md:rounded-2xl border transition-all duration-300 text-sm md:text-base ${config.lighting === LightingMode.Day ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
                     >
                       <Sun className="w-5 h-5" /> Daylight
                     </button>
                     <button
                       onClick={() => setConfig(prev => ({ ...prev, lighting: LightingMode.Night }))}
-                      className={`flex items-center justify-center gap-3 py-4 rounded-2xl border transition-all duration-300 ${config.lighting === LightingMode.Night ? 'bg-purple-600 border-purple-500 text-white shadow-[0_10px_20px_rgba(147,51,234,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                      className={`flex items-center justify-center gap-2 py-3 md:py-4 rounded-xl md:rounded-2xl border transition-all duration-300 text-sm md:text-base ${config.lighting === LightingMode.Night ? 'bg-purple-600 border-purple-500 text-white shadow-[0_10px_20px_rgba(147,51,234,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
                     >
                       <Moon className="w-5 h-5" /> Warm Night
                     </button>
