@@ -605,28 +605,28 @@ export default function App() {
 
                 {/* Selections - Dropdown style from image */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-w-0">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Room Type</label>
-                    <div className="relative group">
+                    <div className="relative group w-full">
                       <select
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl pl-4 pr-10 py-3 md:pl-5 md:pr-12 md:py-4 text-sm truncate focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
                         value={config.roomType}
                         onChange={(e) => setConfig(prev => ({ ...prev, roomType: e.target.value as RoomType }))}
                       >
-                        {Object.values(RoomType).map(type => <option key={type} value={type} className="bg-slate-900">{type}</option>)}
+                        {Object.values(RoomType).map(type => <option key={type} value={type} className="bg-slate-900 truncate">{type}</option>)}
                       </select>
                       <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 rotate-90 pointer-events-none group-hover:text-white transition-colors" />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-w-0">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Interior Style</label>
-                    <div className="relative group">
+                    <div className="relative group w-full">
                       <select
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl md:rounded-2xl pl-4 pr-10 py-3 md:pl-5 md:pr-12 md:py-4 text-sm truncate focus:outline-none focus:ring-2 focus:ring-indigo-500/50 appearance-none text-white font-medium cursor-pointer transition-all group-hover:bg-white/[0.06]"
                         value={config.style}
                         onChange={(e) => setConfig(prev => ({ ...prev, style: e.target.value as InteriorStyle }))}
                       >
-                        {Object.values(InteriorStyle).map(style => <option key={style} value={style} className="bg-slate-900">{style}</option>)}
+                        {Object.values(InteriorStyle).map(style => <option key={style} value={style} className="bg-slate-900 truncate">{style}</option>)}
                       </select>
                       <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 rotate-90 pointer-events-none group-hover:text-white transition-colors" />
                     </div>
