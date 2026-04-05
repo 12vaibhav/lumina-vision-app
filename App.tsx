@@ -587,20 +587,20 @@ export default function App() {
       )}
 
       {/* Main Tool Section */}
-      <section id="showcase" ref={toolRef} className="py-16 md:py-24 px-6 relative reveal">
+      <section id="showcase" ref={toolRef} className="py-10 md:py-24 px-6 relative reveal">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-12 gap-12 items-start">
 
             {/* Control Panel - Redesigned to match Main Tool Section in image */}
             <div className="lg:col-span-5 space-y-8 sticky top-28">
-              <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 space-y-8 md:space-y-10 border border-white/10 shadow-2xl">
+              <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-5 md:p-10 space-y-6 md:space-y-10 border border-white/10 shadow-2xl">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
                     <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.3em]">AI Design Lab v4.0</span>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-white font-['Outfit']">Reimagine Space</h2>
-                  <p className="text-gray-400 font-light text-base md:text-lg">Describe your vision or use our precision controls.</p>
+                  <h2 className="text-2xl md:text-4xl font-bold text-white font-['Outfit']">Reimagine Space</h2>
+                  <p className="text-gray-400 font-light text-sm md:text-lg">Describe your vision or use our precision controls.</p>
                 </div>
 
                 {/* Selections - Dropdown style from image */}
@@ -639,7 +639,7 @@ export default function App() {
                   <div className="relative">
                     <textarea
                       placeholder="Describe specific details like 'velvet textures', 'oak flooring', or 'minimalist art'..."
-                      className="w-full bg-white/[0.03] border border-white/10 rounded-[1.5rem] md:rounded-[2rem] px-5 py-4 md:px-6 md:py-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-light min-h-[100px] md:min-h-[120px] resize-none placeholder:text-gray-600"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-[1.5rem] md:rounded-[2rem] px-5 py-4 md:px-6 md:py-5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-white font-light min-h-[80px] md:min-h-[120px] resize-none placeholder:text-gray-600"
                     />
                     <div className="absolute bottom-4 right-4 flex gap-2">
                       <button className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
@@ -728,7 +728,7 @@ export default function App() {
                   <button
                     onClick={handleGenerate}
                     disabled={loading || loadingVariations || !config.image}
-                    className={`flex-1 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95'}`}
+                    className={`flex-1 py-3.5 md:py-6 rounded-2xl text-base md:text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95'}`}
                   >
                     {loading ? (
                       <div className="flex items-center gap-3">
@@ -751,7 +751,7 @@ export default function App() {
                   <button
                     onClick={handleGenerateVariations}
                     disabled={loading || loadingVariations || !config.image}
-                    className={`flex-1 py-4 md:py-6 rounded-2xl text-lg md:text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-95'}`}
+                    className={`flex-1 py-3.5 md:py-6 rounded-2xl text-base md:text-xl font-bold transition-all flex items-center justify-center gap-3 relative overflow-hidden group ${loading || loadingVariations || !config.image ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:shadow-[0_0_40px_rgba(79,70,229,0.3)] active:scale-95'}`}
                   >
                     {loadingVariations ? (
                       <div className="flex items-center gap-3">
@@ -776,7 +776,7 @@ export default function App() {
 
             {/* Preview Output */}
             <div className="lg:col-span-7 space-y-10">
-              <div className="glass rounded-[2.5rem] md:rounded-[4rem] p-4 md:p-8 lg:p-12 border border-white/10 min-h-[400px] md:min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden">
+              <div className="glass rounded-[2.5rem] md:rounded-[4rem] p-4 md:p-8 lg:p-12 border border-white/10 aspect-[4/5] sm:aspect-auto sm:min-h-[600px] flex flex-col items-center justify-center relative overflow-hidden text-center">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 blur-[100px] pointer-events-none"></div>
 
@@ -860,9 +860,9 @@ export default function App() {
                         { label: 'Category', value: config.roomType },
                         { label: 'Luminance', value: config.lighting }
                       ].map((stat, i) => (
-                        <div key={i} className="glass-card p-8 rounded-[2rem] border border-white/5 group">
+                        <div key={i} className="glass-card p-5 md:p-8 rounded-[2rem] border border-white/5 group text-left">
                           <span className="text-[10px] uppercase tracking-[0.3em] text-indigo-400 font-black mb-1 block">Property {stat.label}</span>
-                          <p className="text-white text-xl font-bold font-['Outfit'] group-hover:text-indigo-300 transition-colors uppercase tracking-tight">{stat.value}</p>
+                          <p className="text-white text-lg md:text-xl font-bold font-['Outfit'] group-hover:text-indigo-300 transition-colors uppercase tracking-tight">{stat.value}</p>
                         </div>
                       ))}
                     </div>
@@ -891,7 +891,7 @@ export default function App() {
                       <Sparkles className="w-12 h-12 text-gray-600 group-hover:text-indigo-400 transition-colors duration-500" />
                     </div>
                     <div className="space-y-4">
-                      <h3 className="text-2xl md:text-4xl font-bold text-white font-['Outfit']">Awaiting Your Input</h3>
+                      <h3 className="text-2xl md:text-4xl font-bold text-white font-['Outfit'] px-2">Awaiting Your Input</h3>
                       <p className="text-gray-400 max-w-sm mx-auto text-base md:text-lg font-light px-4">Complete the configuration on the left to witness an AI-driven transformation of your room.</p>
                     </div>
                     <div className="flex gap-4 justify-center">
@@ -903,7 +903,7 @@ export default function App() {
                 )}
               </div>
 
-              <div className="bg-white/[0.03] p-6 md:p-10 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row items-start gap-6">
+              <div className="bg-white/[0.03] p-5 md:p-10 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row items-start gap-4 md:gap-6">
                 <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 flex-shrink-0 border border-indigo-500/20">
                   <Info className="w-6 h-6" />
                 </div>
