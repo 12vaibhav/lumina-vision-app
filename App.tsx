@@ -691,7 +691,7 @@ export default function App() {
 
                 {/* Lighting Selection */}
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button
                       onClick={() => setConfig(prev => ({ ...prev, lighting: LightingMode.Day }))}
                       className={`flex items-center justify-center gap-2 py-3 md:py-4 rounded-xl md:rounded-2xl border transition-all duration-300 text-sm md:text-base ${config.lighting === LightingMode.Day ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
